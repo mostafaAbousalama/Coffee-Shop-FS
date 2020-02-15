@@ -1,5 +1,5 @@
 import json
-from flask import request, _request_ctx_stack
+from flask import request, _request_ctx_stack, abort
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
@@ -36,26 +36,26 @@ def get_token_auth_header():
        raise AuthError({
            'code': 'authorization_header_missing',
            'description': 'Authorization header is expected.'
-       }, 401)
+       }, abort(401))
 
    parts = auth.split()
    if parts[0].lower() != 'bearer':
        raise AuthError({
            'code': 'invalid_header',
            'description': 'Authorization header must start with "Bearer".'
-       }, 401)
+       }, abort(401))
 
    elif len(parts) == 1:
        raise AuthError({
            'code': 'invalid_header',
            'description': 'Token not found.'
-       }, 401)
+       }, abort(401))
 
    elif len(parts) > 2:
        raise AuthError({
            'code': 'invalid_header',
            'description': 'Authorization header must be bearer token.'
-       }, 401)
+       }, abort(401))
 
    token = parts[1]
    return token
@@ -76,13 +76,13 @@ def check_permissions(permission, payload):
         raise AuthError({
             'code': 'invalid_claims',
             'description': 'Permissions not included in JWT.'
-        }, 400)
+        }, abort(400))
 
     if permission not in payload['permissions']:
         raise AuthError({
             'code': 'unauthorized',
             'description': 'Permission not found.'
-        }, 401)
+        }, abort(401))
     return True
 
 '''
@@ -107,7 +107,7 @@ def verify_decode_jwt(token):
         raise AuthError({
             'code': 'invalid_header',
             'description': 'Authorization malformed.'
-        }, 401)
+        }, abort(401))
 
     for key in jwks['keys']:
         if key['kid'] == unverified_header['kid']:
@@ -134,22 +134,22 @@ def verify_decode_jwt(token):
             raise AuthError({
                 'code': 'token_expired',
                 'description': 'Token expired.'
-            }, 401)
+            }, abort(401))
 
         except jwt.JWTClaimsError:
             raise AuthError({
                 'code': 'invalid_claims',
                 'description': 'Incorrect claims. Please, check the audience and issuer.'
-            }, 401)
+            }, abort(401))
         except Exception:
             raise AuthError({
                 'code': 'invalid_header',
                 'description': 'Unable to parse authentication token.'
-            }, 400)
+            }, abort(400))
     raise AuthError({
                 'code': 'invalid_header',
                 'description': 'Unable to find the appropriate key.'
-            }, 400)
+            }, abort(400))
 
 '''
 @TODO implement @requires_auth(permission) decorator method
